@@ -38,7 +38,7 @@ class Example(QMainWindow):
         usersAction.setShortcut('Ctrl+U')
         usersAction.triggered.connect(self.getUsersList)
         #CreateUser
-        CreateUser = QAction('&UserList', self)
+        CreateUser = QAction('&CreateNew', self)
         CreateUser.setShortcut('Ctrl+n')
         CreateUser.triggered.connect(self.CreateNewUser)
         fileMenu.addAction(exitAction)
