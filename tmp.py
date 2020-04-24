@@ -1,38 +1,55 @@
-#from PyQt5 import QtCore
-#from PyQt5 import QtGui
-from PyQt5 import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
 import sys
 import os
+from PyQt5.QtWidgets import * 
+from PyQt5.QtGui import * 
+from PyQt5.QtCore import * 
 
-class Example(QMainWindow):
-    def __init__(self):
-        super().__init__()
+
+class InfoWindow(QMainWindow):
+    def __init__(self, name, parent=None):                               
+        super().__init__(parent)
+        
+
+        self.left, self.top, self.width, self.height = 400, 400, 300, 300
+
+        self.name = name                                                  
+
         self.initUI()
 
     def initUI(self):
-        #----Toolbar-----
-        #
-        #----------------
-        exit2Action = QAction(QIcon('./images/web.png'), 'Exit', self)
-        exit2Action.setShortcut('Ctrl+W')
-        exit2Action.triggered.connect(qApp.quit)
-        self.toolbar = self.addToolBar('Exit')
-        self.toolbar.addAction(exit2Action)
-        #--------Меню программы
-        #Менюшка с кнопкой выхода из приложения
-        #--------
+        self.setWindowTitle('info')
+
+        self.infolabel = QLabel(self)                                     
+
+        with open('{}.txt'.format(self.name), 'r') as f:    
+            self.infolabel.setText(f.read())                              
+            self.infolabel.adjustSize()                                   
+
+        self.infolabel.setStyleSheet('border-style: solid; border-width: 1px; border-color: black; ')
+
+
+class FirstWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__()
+        self.title = "Working time"
+        self.left, self.top, self.width, self.height = 200, 200, 400, 400
+        self.current = "none"
+
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.setWindowIcon(QIcon('./images/TimeForWork.png'))
         self.statusBar()
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu2 = menubar.addMenu('&Users')
         #Exit
-        exitAction = QAction(QIcon('./images/web.png'), '&exit', self)
+        exitAction = QAction(QIcon('./images/web.png'), '&File', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit Application')
-        exitAction.triggered.connect(qApp.quit)
+        exitAction.triggered.connect(qApp.exit)
         #List of users
         usersAction = QAction(QIcon('./images/web.png'), '&UserList', self)
         usersAction.setShortcut('Ctrl+U')
@@ -44,42 +61,29 @@ class Example(QMainWindow):
         fileMenu.addAction(exitAction)
         fileMenu2.addAction(usersAction)
         fileMenu2.addAction(CreateUser)
-        #
-        #Кнопка с всплывающей подсказкой
-        #
-        QToolTip.setFont(QFont('SansSerif', 10))
-        self.setGeometry(300, 300, 300, 220)
-        self.setWindowTitle('Icon')
-        btn = QPushButton('Button', self)
-        btn.setToolTip('This is a push button')
-        btn.resize(btn.sizeHint())
-        btn.move(50, 50)
-        #---------------------------
-        #Кнопка закрытия окна
-        #---------------------------
-        '''qbtn = QPushButton('Quit', self)
-        qbtn.clicked.connect(QCoreApplication.instance().quit)
-        qbtn.resize(qbtn.sizeHint())
-        qbtn.move(10, 10)
-        '''
-        self.show()
-    #--------------
-    #Спросить действительно ли закрыть окно (по крестику)
-    #--------------
-    def closeEvent(self, event):  
-        reply = QMessageBox.question(self, 'Message',
-                                     "Are you sure to quit?", QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
 
-    def center(self):
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().right()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        tmpList = os.listdir()
+        UsersList = []
+        for item in tmpList:
+            if item[-3:] == 'txt':
+                UsersList.append(item[:-4])
+
+        self.combo = QComboBox(self)
+        self.combo.addItem('Выберите сотрудника')
+        self.combo.addItems(UsersList)
+        self.combo.move(50, 50)
+        self.combo.resize(200, 30)
+        self.combo.activated[str].connect(self.onActivated)
+
+    def winshow(self):
+        self.info.show()  
+
+    def onActivated(self, text):
+        self.current = self.combo.currentText()
+        if self.current != 'Выберите сотрудника':
+            self.info = InfoWindow(self.current, self)                   
+
+            self.winshow()
 
     def getUsersList(self):
         tmpList = os.listdir()
@@ -88,29 +92,33 @@ class Example(QMainWindow):
             if item[-3:] == 'txt':
                 UsersList.append(item)
         print(UsersList)
-        x = 50
-        y = 90
-        for name in UsersList:
-            namebtn = QPushButton(name, self)
-            namebtn.move(x, y)
-            y += 20
 
     def CreateNewUser(self):
         self.le = QLineEdit(self)
         self.le.move(70, 70)
         self.setWindowTitle("Create new user")
-        self.show()
+        self.button = QPushButton("show", self)
         text, ok = QInputDialog.getText(self, 'InputDialog', 'Enter new name: ')
-        if ok:
-            self.le.setText(str(text))
-            NewName = self.le.getText()
-        print(NewName)
+        print(text, ok)
+        if text:                                          
+            self.le.setText(text)                         
+            NewName = self.le.text()                      
+            with open('{}.txt'.format(text), 'w') as f:    
+                pass
 
-#def CreateNewUser():
-    
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Message',
+                                     "Are you sure to quit?", QMessageBox.Yes |
+                                     QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()
+            print('window closed')
+        else:
+            event.ignore()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = Example()
+    ex = FirstWindow()
+    ex.show()                                             
     sys.exit(app.exec_())
-
